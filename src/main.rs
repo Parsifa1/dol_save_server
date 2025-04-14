@@ -37,9 +37,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     if config.pwa.enable {
         init_pwa(&config)?;
         let sw_path = config.root.join(&config.pwa.source).join("sw.js");
-        app = app.route_service("/sw.js", ServeFile::new(config.root.join(sw_path)));
+        let manifest = config.root.join(&config.pwa.source).join("manifest.json");
+        let icon = config.root.join(&config.pwa.source).join("icon.png");
+        app = app.route_service("/sw.js", ServeFile::new(sw_path));
+        app = app.route_service("/manifest.json", ServeFile::new(manifest));
+        app = app.route_service("/icon.png", ServeFile::new(icon));
     }
-
     let cfg = Cfg::new(config);
     app = app
         // 存档相关接口

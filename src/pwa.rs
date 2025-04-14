@@ -11,26 +11,18 @@ pub fn init_pwa(config: &Config) -> Result<(), Box<dyn Error>> {
     file.read_to_string(&mut index_html)?;
 
     // insert mainfest
-    let manifest_marker = "<meta charset=\"UTF-8\" />";
-    let insert_index = index_html.find(manifest_marker).ok_or("marker not find")?;
-
-    //去掉第一个字符 '.'
-    let manifest = config
-        .pwa
-        .source
-        .strip_prefix('.')
-        .unwrap_or(&config.pwa.source);
-
-    let manifest_link = format!(
-        "<link rel=\"manifest\" href=\"{}/manifest.json\">\n",
-        manifest
-    );
-    index_html.insert_str(insert_index, &manifest_link);
+    let manifest_link =
+        "<link crossorigin=\"use-credentials\" rel=\"manifest\" href=\"manifest.json\">\n";
+    if !index_html.contains(manifest_link) {
+        let manifest_marker = "<meta charset=\"UTF-8\" />";
+        let insert_index = index_html.find(manifest_marker).ok_or("marker not find")?;
+        index_html.insert_str(insert_index, manifest_link);
+    }
 
     //insert serviceWorker
-    let service_marker = "<body>\n\t<div id=\"init-screen\">";
     let service_insert = "    <script>\n        if (typeof navigator.serviceWorker !== 'undefined') {\n            navigator.serviceWorker.register('sw.js')\n        }\n    </script>\n";
     if !index_html.contains(service_insert) {
+        let service_marker = "<body>\n\t<div id=\"init-screen\">";
         let marker_prefix_len = "<body>\n\t".len();
         let insert_index_base = index_html
             .find(service_marker)
