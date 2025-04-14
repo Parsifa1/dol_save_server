@@ -31,6 +31,15 @@ pub fn init_pwa(config: &Config) -> Result<(), Box<dyn Error>> {
         index_html.insert_str(insert_index, service_insert);
     }
 
+    let style_insert =
+        "<style>\n    body {\n        overscroll-behavior-y: none;\n    }\n</style>\n";
+    if !index_html.contains(style_insert) {
+        let style_marker = "\n</head>";
+        let insert_index = index_html.find(style_marker).ok_or("marker not find")?;
+        info!("inserted style");
+        index_html.insert_str(insert_index, style_insert);
+    }
+
     let mut file = std::fs::File::create(&index)?;
     file.write_all(index_html.as_bytes())?;
 
