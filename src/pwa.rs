@@ -20,7 +20,18 @@ pub fn init_pwa(config: &Config) -> Result<(), Box<dyn Error>> {
     }
 
     //insert serviceWorker
-    let service_insert = "    <script>\n        if (typeof navigator.serviceWorker !== 'undefined') {\n            navigator.serviceWorker.register('sw.js')\n        }\n    </script>\n";
+    let service_insert = "<script>
+    window.history.pushState({}, '')
+    if (typeof navigator.serviceWorker !== 'undefined') {
+        navigator.serviceWorker.register('sw.js')
+    }
+    window.addEventListener('popstate', function(event) {
+        event.preventDefault();
+        window.history.pushState({}, '')
+        closeOverlay();
+    })
+</script>
+";
     if !index_html.contains(service_insert) {
         let service_marker = "<body>\n\t<div id=\"init-screen\">";
         let marker_prefix_len = "<body>\n\t".len();
