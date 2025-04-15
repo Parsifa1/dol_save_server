@@ -114,60 +114,34 @@ fn init_log() {
 #[instrument]
 pub fn init_mod(dir: &Path) -> std::io::Result<()> {
     const MOD_LIST_NAME: &str = "modList.json";
-    const MOD_NAME: &str = "save_server.mod.zip";
-    const MOD_DATA: &[u8] = include_bytes!("../save_server.mod.zip");
+
+    //all mods
+    const SERVER_MOD_DATA: &[u8] = include_bytes!("../mod/save_server.mod.zip");
+    const DOLSIMS_MOD_DATA: &[u8] = include_bytes!("../mod/DoLSims.mod.zip");
 
     info!("开始初始化模组");
-
     let mod_list_path = dir.join(MOD_LIST_NAME);
-    let mut mod_list = if mod_list_path.exists() {
+    let mod_list = {
         let s = std::fs::read_to_string(&mod_list_path)
             .inspect_err(|error| error!(%error, ?mod_list_path, "读取模组列表败"))?;
         serde_json::from_str::<Vec<String>>(&s)
             .inspect_err(|error| error!(%error, ?mod_list_path, "反序列化模组列表失败"))?
-    } else {
-        vec![]
     };
-    info!("已获取模组列表");
 
-    let mut append = true;
-    let mod_path = mod_list
-        .iter()
-        .find_map(|s| {
-            let p = Path::new(s);
-            if p.file_name().is_some_and(|f| f == MOD_NAME) {
-                append = false;
-                Some(dir.join(p))
-            } else {
-                None
+    for mod_name in mod_list {
+        let mod_path = dir.join(&mod_name);
+        let data = match mod_name.as_str().strip_prefix("mod/").unwrap_or(&mod_name) {
+            "save_server.mod.zip" => SERVER_MOD_DATA,
+            "DoLSims.mod.zip" => DOLSIMS_MOD_DATA,
+            //more mods...
+            _ => {
+                error!(%mod_name, "未知模组");
+                continue;
             }
-        })
-        .unwrap_or_else(|| Path::new(dir).join("mod").join(MOD_NAME));
-    debug!(?mod_path, "模组路径");
-
-    if let Some(mod_dir) = mod_path.parent() {
-        std::fs::create_dir_all(mod_dir)
-            .inspect_err(|error| error!(%error, ?mod_dir, "创建模组目录失败"))?;
-        info!(?mod_dir, "已创建模组目录");
-    }
-
-    std::fs::write(&mod_path, MOD_DATA)
-        .inspect_err(|error| error!(%error, ?mod_path, "保存模组失败"))?;
-    info!(?mod_path, "已保存模组");
-
-    if append {
-        let p = mod_path
-            .strip_prefix(dir)
-            .unwrap()
-            .to_string_lossy()
-            .replace("\\", "/");
-
-        mod_list.push(p);
-        let json = serde_json::to_string_pretty(&mod_list)
-            .inspect_err(|error| error!(%error, ?mod_list, "序列化模组列表失败"))?;
-        std::fs::write(&mod_list_path, &json)
-            .inspect_err(|error| error!(%error, ?mod_list_path, %json, "保存模组列表失败"))?;
-        info!(?mod_list_path, "已更新模组列表");
+        };
+        std::fs::write(&mod_path, data)
+            .inspect_err(|error| error!(%error, ?mod_path,"保存{}失败", mod_name))?;
+        info!(?mod_path, "已保存{}", mod_name);
     }
 
     info!("模组初始化结束");
