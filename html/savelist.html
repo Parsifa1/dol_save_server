@@ -1,96 +1,98 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>存档列表</title>
-</head>
+  </head>
 
-<body>
+  <body>
     <div>
-        <select id="dss_list" autocomplete="off">
-            <option value="" selected>请选择存档</option>
-        </select>
-        <button id="dss_refresh">刷新</button>
-        <button id="dss_delete" style="color: red;">删除</button>
-        <!-- <button id="dss_load">加载存档</button> -->
+      <select id="dss_list" autocomplete="off">
+        <option value="" selected>请选择存档</option>
+      </select>
+      <button id="dss_refresh">刷新</button>
+      <button id="dss_delete" style="color: red">删除</button>
+      <!-- <button id="dss_load">加载存档</button> -->
     </div>
     <div>
-        <p id="dss_msg" style="color: red;"></p>
+      <p id="dss_msg" style="color: red"></p>
     </div>
     <div>
-        <p>存档码</p>
-        <textarea id="dss_code" cols="100" rows="20" autocomplete="off" readonly></textarea>
+      <p>存档码</p>
+      <textarea
+        id="dss_code"
+        cols="100"
+        rows="20"
+        autocomplete="off"
+        readonly
+      ></textarea>
     </div>
     <script type="text/javascript">
-        async function dss_list_load() {
-            let list = document.querySelector("#dss_list");
-            let code = document.querySelector("#dss_code");
-            await fetch("/api/save")
-                .then(async function (resp) {
-                    list.innerHTML = "";
+      async function dss_list_load() {
+        let list = document.querySelector("#dss_list");
+        let code = document.querySelector("#dss_code");
+        await fetch("/api/save").then(async function (resp) {
+          list.innerHTML = "";
 
-                    if (resp.ok) {
-                        let l = await resp.json();
-                        if (l.length === 0) {
-                            code.value = "目前没有存档";
-                        } else {
-
-                            l.forEach(save => {
-                                let option = document.createElement("option");
-                                option.value = save.name;
-                                option.textContent = `${save.name} ${save.time}`;
-                                list.appendChild(option);
-                            });
-
-                            await dss_code_show();
-                        }
-                    } else {
-                        code.value = "加载存档列表失败";
-                    }
-                });
-        }
-
-        async function dss_code_show() {
-            let list = document.querySelector("#dss_list");
-            let code = document.querySelector("#dss_code");
-            let name = list.value;
-            if (name.length > 0) {
-                let resp = await fetch(`/api/save/${name}`);
-                if (resp.ok) {
-                    code.value = await resp.text();
-                }
+          if (resp.ok) {
+            let l = await resp.json();
+            if (l.length === 0) {
+              code.value = "目前没有存档";
             } else {
-                code.value = "";
+              l.forEach((save) => {
+                let option = document.createElement("option");
+                option.value = save.name;
+                option.textContent = `${save.name} ${save.time}`;
+                list.appendChild(option);
+              });
+
+              await dss_code_show();
             }
+          } else {
+            code.value = "加载存档列表失败";
+          }
+        });
+      }
+
+      async function dss_code_show() {
+        let list = document.querySelector("#dss_list");
+        let code = document.querySelector("#dss_code");
+        let name = list.value;
+        if (name.length > 0) {
+          let resp = await fetch(`/api/save/${name}`);
+          if (resp.ok) {
+            code.value = await resp.text();
+          }
+        } else {
+          code.value = "";
         }
+      }
 
-        async function dss_save_delete() {
-            let list = document.querySelector("#dss_list");
-            let name = list.value;
-            let msg = "";
-            if (name.length > 0) {
-                let resp = await fetch(`/api/save/${name}`, { method: "DELETE" });
-                msg = await resp.text();
-            } else {
-                msg = "请选择有效存档";
-            }
-            document.querySelector("#dss_msg").textContent = msg;
-            await dss_list_load();
+      async function dss_save_delete() {
+        let list = document.querySelector("#dss_list");
+        let name = list.value;
+        let msg = "";
+        if (name.length > 0) {
+          let resp = await fetch(`/api/save/${name}`, { method: "DELETE" });
+          msg = await resp.text();
+        } else {
+          msg = "请选择有效存档";
         }
+        document.querySelector("#dss_msg").textContent = msg;
+        await dss_list_load();
+      }
 
-        async function dss_init() {
-            document.querySelector("#dss_list").onchange = dss_code_show;
-            document.querySelector("#dss_refresh").onclick = dss_list_load;
-            document.querySelector("#dss_delete").onclick = dss_save_delete;
-            // document.querySelector("#dss_load").onclick = () => Save.deserialize(document.querySelector("#dss_code").value);
+      async function dss_init() {
+        document.querySelector("#dss_list").onchange = dss_code_show;
+        document.querySelector("#dss_refresh").onclick = dss_list_load;
+        document.querySelector("#dss_delete").onclick = dss_save_delete;
+        // document.querySelector("#dss_load").onclick = () => Save.deserialize(document.querySelector("#dss_code").value);
 
-            await document.querySelector("#dss_refresh").click();
-        }
+        await document.querySelector("#dss_refresh").click();
+      }
 
-        setTimeout(dss_init, 0);
+      setTimeout(dss_init, 0);
     </script>
-</body>
-
+  </body>
 </html>
